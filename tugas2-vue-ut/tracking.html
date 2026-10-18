@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SITTA UT | Tracking DO</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/vue@2.7.16/dist/vue.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="index.html"><span class="brand-mark">UT</span><div><strong>SITTA UT</strong><small>Sistem Informasi Bahan Ajar</small></div></a>
+    <nav><a class="nav-link" href="stok.html">Stok Bahan Ajar</a><a class="nav-link active" href="tracking.html">Tracking DO</a></nav>
+  </header>
+  <main id="trackingApp" class="container">
+    <section class="page-heading"><div><p class="eyebrow">DISTRIBUSI</p><h1>Tracking Delivery Order</h1><p>Tambah data pengiriman dan lihat riwayat perjalanan paket.</p></div><div class="stat-pill"><strong>{{ doList.length }}</strong><span>nomor DO</span></div></section>
+    <section class="panel">
+      <div class="panel-heading"><div><h2>Tambah Delivery Order</h2><p>Nomor DO dibuat otomatis mengikuti tahun berjalan dan nomor urut.</p></div></div>
+      <form class="form-grid" @submit.prevent="tambahDO">
+        <label>Nomor DO (otomatis)<input :value="nomorBerikutnya" readonly></label>
+        <label>NIM<input v-model.trim="form.nim" required pattern="[0-9]{9,12}" title="NIM harus terdiri dari 9 sampai 12 digit angka" placeholder="9–12 digit angka"></label>
+        <label>Nama penerima<input v-model.trim="form.nama" required minlength="3" placeholder="Nama lengkap"></label>
+        <label>Jenis Pengiriman<select v-model="form.ekspedisi" required><option disabled value="">Pilih jenis pengiriman</option>
+              <option v-for="item in pengirimanList":key="item.kode":value="item.kode">{{ item.nama }}</option></select></label>
+        <label>Paket bahan ajar<select v-model="form.kodePaket" required><option disabled value="">Pilih paket</option><option v-for="p in paket" :key="p.kode" :value="p.kode">{{ p.kode }} — {{ p.nama }}</option></select></label>
+        <label>Tanggal kirim<input v-model="form.tanggalKirim" type="date" required></label>
+        <div class="package-detail full-width" v-if="paketTerpilih">
+          <strong>{{ paketTerpilih.kode }} — {{ paketTerpilih.nama }}</strong>
+          <p>Isi paket: <span v-for="(kode, index) in paketTerpilih.isi" :key="kode">{{ kode }}<span v-if="index < paketTerpilih.isi.length - 1">, </span></span></p>
+          <p>Total harga: <strong>{{ formatRupiah(paketTerpilih.harga) }}</strong></p>
+        </div>
+        <p class="validation full-width" v-if="pesanError" role="alert">{{ pesanError }}</p>
+        <p class="success full-width" v-if="pesanSukses" role="status">{{ pesanSukses }}</p>
+        <div class="form-actions full-width"><button class="btn" type="submit">Simpan Delivery Order</button><button class="btn btn-light" type="button" @click="resetForm">Kosongkan formulir</button></div>
+      </form>
+    </section>
+    <section class="panel">
+      <div class="panel-heading"><div><h2>Data pengiriman</h2><p>Pilih salah satu nomor DO untuk melihat detail perjalanan.</p></div></div>
+      <div class="filters tracking-filter">
+        <label>Nomor DO<select v-model="doDipilih"><option v-for="item in doList" :key="item.nomor" :value="item.nomor">{{ item.nomor }}</option></select></label>
+        <label>Cari penerima<input v-model.trim="cariNama" type="search" placeholder="Cari nama atau NIM"></label>
+      </div>
+      <div class="table-wrap">
+        <table><thead><tr><th>Nomor DO</th><th>Penerima</th><th>Ekspedisi</th><th>Tanggal kirim</th><th>Paket</th><th>Total</th><th>Status</th></tr></thead>
+          <tbody><tr v-for="item in doTersaring" :key="item.nomor" :class="{ 'selected-row': item.nomor === doDipilih }" @click="doDipilih = item.nomor">
+            <td><button type="button" class="text-button" @click.stop="doDipilih = item.nomor">{{ item.nomor }}</button></td><td>{{ item.nama }}<small class="cell-sub">{{ item.nim }}</small></td><td>{{ item.ekspedisi }}</td><td>{{ item.tanggalKirim }}</td><td>{{ item.namaPaket }}</td><td>{{ formatRupiah(item.total) }}</td><td><span class="status status-info">{{ item.status }}</span></td>
+          </tr><tr v-if="doTersaring.length === 0"><td colspan="7" class="empty-state">Data pengiriman tidak ditemukan.</td></tr></tbody>
+        </table>
+      </div>
+      <div class="timeline-card" v-if="doAktif">
+        <div><p class="eyebrow">DETAIL PENGIRIMAN</p><h3>{{ doAktif.nomor }}</h3><p>{{ doAktif.nama }} · {{ doAktif.ekspedisi }}</p></div>
+        <div class="timeline"><div class="timeline-item" v-for="(langkah, index) in doAktif.perjalanan" :key="index"><span class="timeline-dot"></span><div><strong>{{ langkah.keterangan }}</strong><small>{{ langkah.waktu }}</small></div></div></div>
+      </div>
+      <p class="helper" v-show="cariNama">Hasil pencarian untuk: “{{ cariNama }}”.</p>
+    </section>
+    <footer class="page-footer">SITTA UT • Tugas Praktik 2 Vue.js</footer>
+  </main>
+  <script src="js/tracking-app.js"></script>
+</body>
+</html>
